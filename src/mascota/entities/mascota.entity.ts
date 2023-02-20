@@ -13,4 +13,7 @@ export class Mascotas {
 
     @Column()
     Id_Dueno: number
+
+    @Column()
+    Tiempo_Mascota: number
 }

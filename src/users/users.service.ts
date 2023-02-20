@@ -47,4 +47,16 @@ export class UsersService {
         const data = {token}
         return data;
     }
+
+    async findPsicologos(){
+        return this.userRespository.find({
+            select: {
+                Id_Usuario: true,
+                Nombre_Usuario: true,
+                Apellido_Usuario: true
+            }, 
+            where: {
+                Roll_Usuario: 'psicologo'
+            }})
+    }
 }
