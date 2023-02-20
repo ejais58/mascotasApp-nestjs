@@ -23,7 +23,7 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard)
     @Get('psicologos')
-    getAllPsicologo(@Req() req){
+    verPsicologos(@Req() req){
         const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
         const payload = decoded as JwtPayload;
 
