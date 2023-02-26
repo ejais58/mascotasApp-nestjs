@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Usuarios } from '../users/entities/users.entity';
+import { Turnos } from '../psicologia/entities/turnos.entity';
+import { Estados } from '../psicologia/entities/estados.entity';
 
 @Module({
     imports: 
@@ -13,7 +15,7 @@ import { Usuarios } from '../users/entities/users.entity';
         password: '123456',
         database: 'NestDB',
         options: { encrypt: false },
-        entities: [Mascotas, Usuarios]
+        entities: [Mascotas, Usuarios, Turnos, Estados]
     })]
 })
 export class DatabaseModule {}
