@@ -2,7 +2,7 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuarios } from '../users/entities/users.entity';
-import { Repository } from 'typeorm';
+import { LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Turnos } from './entities/turnos.entity';
 import { Estados } from './entities/estados.entity';
@@ -48,15 +48,42 @@ export class PsicologiaService {
             throw new HttpException('PSICOLOGO NOT FOUND', 404);
         }
 
+
         //buscar si no hay turnos pendientes para esa mascota
-        const findMascota = await this.turnoRepository.find({where: {Id_Mascota_Turno: Id_Mascota_Turno}})
-        if (!findMascota){
-            //si no encuentra turno, me guarda un turno
-            const newTurno = this.turnoRepository.create(newRegistro)
-            return this.turnoRepository.save(newTurno)
-        } else {
+        const findMascotaTurno = await this.turnoRepository.findOne({where: {Id_Mascota_Turno: Id_Mascota_Turno}});
+        //si no encuentra turno, me guarda un turno
+        if (!findMascotaTurno){
+            //verifico que la fecha de inicio no este en un turno dado
+            const verficarFecha = await this.turnoRepository.findBy({Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: LessThanOrEqual(Fecha_Inicio_Turno), Fecha_Fin_Turno: MoreThan(Fecha_Inicio_Turno)});
+            if (verficarFecha.length === 0){
+                //ver el tipo de mascota para poder guardar una fecha fin
+                const findMascota = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno}})
+                if (findMascota.Tipo_Mascota === 'perro'){
+
+                    const fechaInicio = new Date(Fecha_Inicio_Turno)
+                    const fechaFin = new Date(fechaInicio.getTime() + 30 * 60000)
+                    newRegistro.Fecha_Fin_Turno = fechaFin;
+                    const newTurno = this.turnoRepository.create(newRegistro)
+                    return this.turnoRepository.save(newTurno)
+
+                } else if (findMascota.Tipo_Mascota === 'gato'){
+
+                    const fechaInicio = new Date(Fecha_Inicio_Turno)
+                    const fechaFin = new Date(fechaInicio.getTime() + 45 * 60000)
+                    newRegistro.Fecha_Fin_Turno = fechaFin;
+                    const newTurno = this.turnoRepository.create(newRegistro)
+                    return this.turnoRepository.save(newTurno)
+                    
+                } else {
+                    throw new HttpException('La mascota no es un perro o un gato', 403);
+                }
+                
+            }
+            throw new HttpException('No se puede guardar turno', 403);
+            
+        } else{
             //si encuentra turno, me los muestra
-            return {turnos_Pendientes: findMascota};
+            return {turno_Pendiente: findMascotaTurno};
         }
         
         
