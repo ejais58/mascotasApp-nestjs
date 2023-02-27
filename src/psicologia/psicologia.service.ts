@@ -25,12 +25,12 @@ export class PsicologiaService {
                         }, 
                    where: {
                         Roll_Usuario: 'psicologo'
-                    }})
+                    }});
     }
 
     async verTurnosDisponibles(registro: RegistrarTurnoDto){
         const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
-        const findTurno = await this.turnoRepository.find({where: {Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: Fecha_Inicio_Turno}})
+        const findTurno = await this.turnoRepository.find({where: {Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: Fecha_Inicio_Turno}});
 
 
         const fechaInicio = new Date(Fecha_Inicio_Turno);
@@ -57,22 +57,22 @@ export class PsicologiaService {
             const verficarFecha = await this.turnoRepository.findBy({Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: LessThanOrEqual(Fecha_Inicio_Turno), Fecha_Fin_Turno: MoreThan(Fecha_Inicio_Turno)});
             if (verficarFecha.length === 0){
                 //ver el tipo de mascota para poder guardar una fecha fin
-                const findMascota = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno}})
+                const findMascota = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno}});
                 if (findMascota.Tipo_Mascota === 'perro'){
 
-                    const fechaInicio = new Date(Fecha_Inicio_Turno)
-                    const fechaFin = new Date(fechaInicio.getTime() + 30 * 60000)
+                    const fechaInicio = new Date(Fecha_Inicio_Turno);
+                    const fechaFin = new Date(fechaInicio.getTime() + 30 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
-                    const newTurno = this.turnoRepository.create(newRegistro)
-                    return this.turnoRepository.save(newTurno)
+                    const newTurno = this.turnoRepository.create(newRegistro);
+                    return this.turnoRepository.save(newTurno);
 
                 } else if (findMascota.Tipo_Mascota === 'gato'){
 
-                    const fechaInicio = new Date(Fecha_Inicio_Turno)
-                    const fechaFin = new Date(fechaInicio.getTime() + 45 * 60000)
+                    const fechaInicio = new Date(Fecha_Inicio_Turno);
+                    const fechaFin = new Date(fechaInicio.getTime() + 45 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
-                    const newTurno = this.turnoRepository.create(newRegistro)
-                    return this.turnoRepository.save(newTurno)
+                    const newTurno = this.turnoRepository.create(newRegistro);
+                    return this.turnoRepository.save(newTurno);
                     
                 } else {
                     throw new HttpException('La mascota no es un perro o un gato', 403);
@@ -100,11 +100,18 @@ export class PsicologiaService {
         }
 
         //muestro los turnos que hay para esa mascota
-        const findTurno = await this.turnoRepository.find({where: {Id_Mascota_Turno: findMascota.Id_Mascota}})
+        const findTurno = await this.turnoRepository.find({where: {Id_Mascota_Turno: findMascota.Id_Mascota}});
         if (!findTurno){
             throw new HttpException('TURNO NOT FOUND', 404);
         }
 
         return findTurno;
+    }
+
+    async cancelarCita(id: number){
+        //buscamos cita y actualizamos el estado
+        await this.turnoRepository.update({Id_Mascota_Turno: id},{Id_Estado_Turno: 4})
+        return "Cita cancelada"
+         
     }
 }
