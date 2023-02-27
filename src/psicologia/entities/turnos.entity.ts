@@ -22,4 +22,8 @@ export class Turnos{
 
     @Column()
     Id_Estado_Turno: number
+
+    @OneToOne(() => Estados)
+    @JoinColumn({name: 'Id_Estado_Turno'})
+    Estado: Estados
 }

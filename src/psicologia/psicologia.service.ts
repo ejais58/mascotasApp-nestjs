@@ -7,6 +7,8 @@ import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Turnos } from './entities/turnos.entity';
 import { Estados } from './entities/estados.entity';
 import { Historiaclinica } from './entities/historiaClinica.entity';
+import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
+import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
 
 @Injectable()
 export class PsicologiaService {
@@ -102,7 +104,15 @@ export class PsicologiaService {
         }
 
         //muestro los turnos que hay para esa mascota
-        const findTurno = await this.turnoRepository.find({where: {Id_Mascota_Turno: findMascota.Id_Mascota}});
+        const findTurno = await this.turnoRepository.find({select: {
+                                                            Estado:{
+                                                                Nombre_Estado:true
+                                                            }},
+                                                            relations:{
+                                                                Estado: true
+                                                            },where: {
+                                                                Id_Mascota_Turno: findMascota.Id_Mascota
+                                                            }});
         if (!findTurno){
             throw new HttpException('TURNO NOT FOUND', 404);
         }
@@ -133,6 +143,42 @@ export class PsicologiaService {
                                     }})
     }
 
+
+    async verCitas(datoCita: citasPsicoDto){
+        const {Id_Psicologo,fecha} = datoCita
+        return this.turnoRepository.find({select:{
+                                            Estado:{
+                                                Nombre_Estado:true
+                                            }},
+                                            relations:{
+                                                Estado:true
+                                            },
+                                            where:{
+                                                Id_Psicologo_Turno:Id_Psicologo, 
+                                                Fecha_Inicio_Turno: fecha, 
+                                                Id_Estado_Turno: 2
+                                            }})
+    }
+
+
+    async terminarCita(createHistoria: CreateHistoriaDto){
+        //Ver estado de la cita
+        const {Id_Mascota_HistoriaClinica} = createHistoria
+        const findEstadoCita = await this.turnoRepository.findOne({where:{Id_Mascota_Turno: Id_Mascota_HistoriaClinica, Id_Estado_Turno: 2}})
+        if (!findEstadoCita){
+            throw new HttpException('Forbidden - estado de mascota incorrecto', 403);
+        }
+        
+        //actualizar estado de turno a terminado
+        await this.turnoRepository.update({Id_Mascota_Turno: Id_Mascota_HistoriaClinica},{Id_Estado_Turno: 3});
+        
+        //cargar resultados a historia clinica
+        const fechaHoy = new Date();
+        createHistoria.Fecha_HistoriaClinica = fechaHoy;
+
+        const newHistoria = this.historiaRepository.create(createHistoria)
+        return this.historiaRepository.save(newHistoria);
+    }
     
 
 }

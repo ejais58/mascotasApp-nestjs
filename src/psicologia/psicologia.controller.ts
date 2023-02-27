@@ -4,6 +4,8 @@ import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
 import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from '../users/jwt/interfaces/jwtPayload';
+import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
+import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
 
 @Controller('psicologia')
 export class PsicologiaController {
@@ -60,6 +62,16 @@ export class PsicologiaController {
     @Get('infomascota/:id')
     verInfoMascota(@Param('id', ParseIntPipe) id: number){
         return this.psicologiaService.infoMascota(id);
+    }
+
+    @Get('citas')
+    verCitas(@Body() datoCita: citasPsicoDto){
+        return this.psicologiaService.verCitas(datoCita);
+    }
+
+    @Post('terminarcita')
+    terminarCita(@Body() createHistoria: CreateHistoriaDto){
+        return this.psicologiaService.terminarCita(createHistoria);
     }
 
     
