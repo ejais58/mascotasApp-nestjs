@@ -6,11 +6,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuarios } from '../users/entities/users.entity';
 import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Estados } from './entities/estados.entity';
+import { Historiaclinica } from './entities/historiaClinica.entity';
 
 
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Turnos, Usuarios, Mascotas, Estados])],
+  imports: [TypeOrmModule.forFeature([Turnos, Usuarios, Mascotas, Estados, Historiaclinica])],
   controllers: [PsicologiaController],
   providers: [PsicologiaService]
 })

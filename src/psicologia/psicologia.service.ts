@@ -6,13 +6,15 @@ import { LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from
 import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Turnos } from './entities/turnos.entity';
 import { Estados } from './entities/estados.entity';
+import { Historiaclinica } from './entities/historiaClinica.entity';
 
 @Injectable()
 export class PsicologiaService {
 
     constructor(@InjectRepository(Usuarios) private userRespository: Repository<Usuarios>, 
                 @InjectRepository(Mascotas) private mascotaRepository: Repository<Mascotas>,
-                @InjectRepository(Turnos) private turnoRepository: Repository<Turnos>){}
+                @InjectRepository(Turnos) private turnoRepository: Repository<Turnos>,
+                @InjectRepository(Historiaclinica) private historiaRepository: Repository<Historiaclinica>){}
 
     
     
@@ -114,4 +116,23 @@ export class PsicologiaService {
         return "Cita cancelada"
          
     }
+
+    async infoMascota(id: number){
+        return this.mascotaRepository.find({select:{
+                                    Usuario:{
+                                        Id_Usuario: true, 
+                                        Nombre_Usuario: true, 
+                                        Apellido_Usuario: true
+                                    }},
+                                    relations: {
+                                        Usuario: true,
+                                        Historia_Clinica: true
+                                    }, 
+                                    where: {
+                                        Id_Mascota: id
+                                    }})
+    }
+
+    
+
 }

@@ -56,4 +56,11 @@ export class PsicologiaController {
         }
         return this.psicologiaService.cancelarCita(id);
     }
+
+    @Get('infomascota/:id')
+    verInfoMascota(@Param('id', ParseIntPipe) id: number){
+        return this.psicologiaService.infoMascota(id);
+    }
+
+    
 }

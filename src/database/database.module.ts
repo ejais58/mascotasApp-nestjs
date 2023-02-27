@@ -4,6 +4,7 @@ import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Usuarios } from '../users/entities/users.entity';
 import { Turnos } from '../psicologia/entities/turnos.entity';
 import { Estados } from '../psicologia/entities/estados.entity';
+import { Historiaclinica } from '../psicologia/entities/historiaClinica.entity';
 
 @Module({
     imports: 
@@ -15,7 +16,7 @@ import { Estados } from '../psicologia/entities/estados.entity';
         password: '123456',
         database: 'NestDB',
         options: { encrypt: false },
-        entities: [Mascotas, Usuarios, Turnos, Estados]
+        entities: [Mascotas, Usuarios, Turnos, Estados, Historiaclinica]
     })]
 })
 export class DatabaseModule {}
