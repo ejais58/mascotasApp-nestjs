@@ -139,7 +139,7 @@ export class PsicologiaService {
                                         Historia_Clinica: true
                                     }, 
                                     where: {
-                                        Id_Mascota: id
+                                        Id_Dueno: id
                                     }})
     }
 
