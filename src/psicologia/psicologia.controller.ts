@@ -29,8 +29,15 @@ export class PsicologiaController {
         return this.psicologiaService.verTurnosDisponibles(registro);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post('register')
-    registrarTurno(@Body() newTurno: RegistrarTurnoDto){
+    registrarTurno(@Body() newTurno: RegistrarTurnoDto, @Req() req){
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
+        const payload = decoded as JwtPayload;
+
+        if (payload.roll === 'psicologo' ){
+            throw new HttpException('Forbidden', 403);
+        }
         return this.psicologiaService.registrarTurno(newTurno);
     }
 
@@ -40,7 +47,7 @@ export class PsicologiaController {
         const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
         const payload = decoded as JwtPayload;
         
-        if (payload.id !== id){
+        if (payload.roll === 'psicologo' ){
             throw new HttpException('Forbidden', 403);
         }
 
@@ -59,18 +66,39 @@ export class PsicologiaController {
         return this.psicologiaService.cancelarCita(id);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('infomascota/:id')
-    verInfoMascota(@Param('id', ParseIntPipe) id: number){
+    verInfoMascota(@Param('id', ParseIntPipe) id: number, @Req() req){
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
+        const payload = decoded as JwtPayload;
+        
+        if (payload.id !== id){
+            throw new HttpException('Forbidden', 403);
+        }
         return this.psicologiaService.infoMascota(id);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('citas')
-    verCitas(@Body() datoCita: citasPsicoDto){
+    verCitas(@Body() datoCita: citasPsicoDto, @Req() req){
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
+        const payload = decoded as JwtPayload;
+
+        if (payload.roll === 'cliente' ){
+            throw new HttpException('Forbidden', 403);
+        }
         return this.psicologiaService.verCitas(datoCita);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post('terminarcita')
-    terminarCita(@Body() createHistoria: CreateHistoriaDto){
+    terminarCita(@Body() createHistoria: CreateHistoriaDto, @Req() req){
+        const decoded = jwt.verify(req.headers.authorization.split(' ')[1], 'jwtConstants.secret');
+        const payload = decoded as JwtPayload;
+
+        if (payload.roll === 'cliente' ){
+            throw new HttpException('Forbidden', 403);
+        }
         return this.psicologiaService.terminarCita(createHistoria);
     }
 
