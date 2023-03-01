@@ -34,12 +34,14 @@ export class PsicologiaService {
 
     async verTurnosDisponibles(registro: RegistrarTurnoDto){
         const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
-        const findTurno = await this.turnoRepository.find({where: {Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: Fecha_Inicio_Turno}});
 
+        const fechaHoraInicio = new Date(Fecha_Inicio_Turno);
+        fechaHoraInicio.setHours(9,0,0,0)
+        const fechaHoraFin = new Date(Fecha_Inicio_Turno);
+        fechaHoraFin.setHours(18,0,0,0)
 
-        const fechaInicio = new Date(Fecha_Inicio_Turno);
-        const horaInicio = fechaInicio.getHours();
-        return findTurno;
+        
+        
     }
 
     async registrarTurno(newRegistro: RegistrarTurnoDto){
@@ -67,6 +69,7 @@ export class PsicologiaService {
                     const fechaInicio = new Date(Fecha_Inicio_Turno);
                     const fechaFin = new Date(fechaInicio.getTime() + 30 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
+                    //guardar turno
                     const newTurno = this.turnoRepository.create(newRegistro);
                     return this.turnoRepository.save(newTurno);
 
@@ -75,6 +78,7 @@ export class PsicologiaService {
                     const fechaInicio = new Date(Fecha_Inicio_Turno);
                     const fechaFin = new Date(fechaInicio.getTime() + 45 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
+                    //guardar turno
                     const newTurno = this.turnoRepository.create(newRegistro);
                     return this.turnoRepository.save(newTurno);
                     
