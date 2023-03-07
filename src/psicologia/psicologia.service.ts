@@ -33,6 +33,12 @@ export class PsicologiaService {
         let siguienteTurno = fechaHoraInicio;
         const arrayTurnosDisponiblesPerro = [];
         const arrayTurnosDisponiblesGato = [];
+
+        //buscamos si es psicologo
+        const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
+        if (findPsicologo.Roll_Usuario !== 'psicologo'){
+            throw new HttpException('PSICOLOGO NOT FOUND', 404);
+        }
         
         //ver el tipo de mascota
         const findMascota = await this.mascotaDao.findMascotaByTipo(Id_Mascota_Turno)
