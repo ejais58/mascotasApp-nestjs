@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuarios } from './entities/users.entity';
 import { JwtModule } from '@nestjs/jwt/dist';
 import { JwtStrategy } from './jwt/jwt.strategy';
+import { UsuarioDao } from '../database/dao/usuarios.dao';
 
 
 @Module({
@@ -14,7 +15,7 @@ import { JwtStrategy } from './jwt/jwt.strategy';
         signOptions: { expiresIn: '1h' },
     }),],
   controllers: [UsersController],
-  providers: [UsersService, JwtStrategy]
+  providers: [UsersService, JwtStrategy, UsuarioDao]
   
 })
 export class UsersModule {}

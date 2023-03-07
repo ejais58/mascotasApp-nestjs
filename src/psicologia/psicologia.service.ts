@@ -1,35 +1,25 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, Inject } from '@nestjs/common';
 import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Usuarios } from '../users/entities/users.entity';
-import { And, LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
-import { Mascotas } from '../mascota/entities/mascota.entity';
-import { Turnos } from './entities/turnos.entity';
-import { Estados } from './entities/estados.entity';
 import { Historiaclinica } from './entities/historiaClinica.entity';
 import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
 import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
+import { UsuarioDao } from '../database/dao/usuarios.dao';
+import { MascotaDao } from '../database/dao/mascotas.dao';
+import { TurnosDao } from '../database/dao/turnos.dao';
+import { HistoriaclinicaDao } from '../database/dao/historiaclinica.dao';
 
 @Injectable()
 export class PsicologiaService {
 
-    constructor(@InjectRepository(Usuarios) private userRespository: Repository<Usuarios>, 
-                @InjectRepository(Mascotas) private mascotaRepository: Repository<Mascotas>,
-                @InjectRepository(Turnos) private turnoRepository: Repository<Turnos>,
-                @InjectRepository(Historiaclinica) private historiaRepository: Repository<Historiaclinica>){}
+    constructor(@Inject(UsuarioDao) private readonly usuarioDao: UsuarioDao,
+                @Inject(MascotaDao) private readonly mascotaDao: MascotaDao,
+                @Inject(TurnosDao) private readonly turnoDao : TurnosDao,
+                @Inject(Historiaclinica) private readonly historiaDao: HistoriaclinicaDao){}
 
     
     
     async findPsicologos(){
-        return this.userRespository.find({
-                   select: {
-                        Id_Usuario: true,
-                        Nombre_Usuario: true,
-                        Apellido_Usuario: true
-                        }, 
-                   where: {
-                        Roll_Usuario: 'psicologo'
-                    }});
+        return this.usuarioDao.allPsicologo();
     }
 
     async verTurnosDisponibles(registro: RegistrarTurnoDto){
@@ -45,19 +35,12 @@ export class PsicologiaService {
         const arrayTurnosDisponiblesGato = [];
         
         //ver el tipo de mascota
-        const findMascota = await this.mascotaRepository.findOne({where: {Id_Mascota: Id_Mascota_Turno}})
+        const findMascota = await this.mascotaDao.findMascotaByTipo(Id_Mascota_Turno)
         if (findMascota.Tipo_Mascota === 'perro'){
             while (siguienteTurno <= fechaHoraFin) {
                 const tiempoFinPerro = new Date(siguienteTurno.getTime() + 30 * 60000)
                 //mostrar turnos de ese dia para perros
-                const turnoDisponible = await this.turnoRepository.find({where: [{
-                                                                            Fecha_Inicio_Turno: LessThanOrEqual(siguienteTurno),
-                                                                            Fecha_Fin_Turno: MoreThanOrEqual(siguienteTurno)
-                                                                        },
-                                                                        {
-                                                                            Fecha_Inicio_Turno: LessThanOrEqual(tiempoFinPerro),
-                                                                            Fecha_Fin_Turno: MoreThanOrEqual(tiempoFinPerro)
-                                                                        }]})
+                const turnoDisponible = await this.turnoDao.turnosDisponibles(siguienteTurno, tiempoFinPerro);
 
                 if (turnoDisponible.length === 0){
                     arrayTurnosDisponiblesPerro.push(new Date(siguienteTurno))
@@ -70,14 +53,7 @@ export class PsicologiaService {
             while (siguienteTurno <= fechaHoraFin) {
                 const tiempoFinGato = new Date(siguienteTurno.getTime() + 45 * 60000)
                 //mostrar turnos de ese dia para perros
-                const turnoDisponible = await this.turnoRepository.find({where: [{
-                                                                            Fecha_Inicio_Turno: LessThanOrEqual(siguienteTurno),
-                                                                            Fecha_Fin_Turno: MoreThanOrEqual(siguienteTurno)
-                                                                        },
-                                                                        {
-                                                                            Fecha_Inicio_Turno: LessThanOrEqual(tiempoFinGato),
-                                                                            Fecha_Fin_Turno: MoreThanOrEqual(tiempoFinGato)
-                                                                        }]})
+                const turnoDisponible = await this.turnoDao.turnosDisponibles(siguienteTurno, tiempoFinGato);
 
                 if (turnoDisponible.length === 0){
                     arrayTurnosDisponiblesGato.push(new Date(siguienteTurno))
@@ -96,34 +72,33 @@ export class PsicologiaService {
         
 
         //buscamos si es psicologo
-        const findPsicologo = await this.userRespository.findOne({where:{Id_Usuario: Id_Psicologo_Turno}});
+        const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
         if (findPsicologo.Roll_Usuario !== 'psicologo'){
             throw new HttpException('PSICOLOGO NOT FOUND', 404);
         }
 
         //buscamos si es su dueño
-        const findDuenio = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno,Id_Dueno: payloadId}});
+        const findDuenio = await this.mascotaDao.findMascotaByDuenio(Id_Mascota_Turno, payloadId)
         if(!findDuenio){
             throw new HttpException('No es su dueño', 404);
         }
         
         //buscar si no hay turnos pendientes para esa mascota
-        const findMascotaTurno = await this.turnoRepository.findOne({where: {Id_Mascota_Turno: Id_Mascota_Turno}});
+        const findMascotaTurno = await this.turnoDao.findMascotaTurno(Id_Mascota_Turno)
         //si no encuentra turno, me guarda un turno
         if (!findMascotaTurno){
             //verifico que la fecha de inicio no este en un turno dado
-            const verficarFecha = await this.turnoRepository.findBy({Id_Psicologo_Turno: Id_Psicologo_Turno, Fecha_Inicio_Turno: LessThanOrEqual(Fecha_Inicio_Turno), Fecha_Fin_Turno: MoreThan(Fecha_Inicio_Turno)});
+            const verficarFecha = await this.turnoDao.findTurnoByFecha(Id_Psicologo_Turno, Fecha_Inicio_Turno)
             if (verficarFecha.length === 0){
                 //ver el tipo de mascota para poder guardar una fecha fin
-                const findMascota = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno}});
+                const findMascota = await this.mascotaDao.findMascotaByTipo(Id_Mascota_Turno)
                 if (findMascota.Tipo_Mascota === 'perro'){
 
                     const fechaInicio = new Date(Fecha_Inicio_Turno);
                     const fechaFin = new Date(fechaInicio.getTime() + 30 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
                     //guardar turno
-                    const newTurno = this.turnoRepository.create(newRegistro);
-                    return this.turnoRepository.save(newTurno);
+                    return this.turnoDao.registrarTurno(newRegistro);
  
 
                 } else if (findMascota.Tipo_Mascota === 'gato'){
@@ -132,8 +107,7 @@ export class PsicologiaService {
                     const fechaFin = new Date(fechaInicio.getTime() + 45 * 60000);
                     newRegistro.Fecha_Fin_Turno = fechaFin;
                     //guardar turno
-                    const newTurno = this.turnoRepository.create(newRegistro);
-                    return this.turnoRepository.save(newTurno);
+                    return this.turnoDao.registrarTurno(newRegistro);
                     
                 } else {
                     throw new HttpException('La mascota no es un perro o un gato', 403);
@@ -155,21 +129,13 @@ export class PsicologiaService {
 
     async verMisTurnos(id: number){
         //busco mascota por el id del usuario
-        const findMascota = await this.mascotaRepository.findOne({where: {Id_Dueno: id}});
+        const findMascota = await this.mascotaDao.findMascotaDuenio(id);
         if (!findMascota){
             throw new HttpException('PET NOT FOUND', 404);
         }
 
         //muestro los turnos que hay para esa mascota
-        const findTurno = await this.turnoRepository.find({select: {
-                                                            Estado:{
-                                                                Nombre_Estado:true
-                                                            }},
-                                                            relations:{
-                                                                Estado: true
-                                                            },where: {
-                                                                Id_Mascota_Turno: findMascota.Id_Mascota
-                                                            }});
+        const findTurno = await this.turnoDao.findTurnoPendiente(findMascota.Id_Mascota)
         if (!findTurno){
             throw new HttpException('TURNO NOT FOUND', 404);
         }
@@ -179,62 +145,38 @@ export class PsicologiaService {
 
     async cancelarCita(id: number){
         //buscamos cita y actualizamos el estado
-        await this.turnoRepository.update({Id_Mascota_Turno: id},{Id_Estado_Turno: 4})
+        await this.turnoDao.cancelarTurno(id)
         return "Cita cancelada"
          
     }
 
     async infoMascota(id: number){
-        return this.mascotaRepository.find({select:{
-                                    Usuario:{
-                                        Id_Usuario: true, 
-                                        Nombre_Usuario: true, 
-                                        Apellido_Usuario: true
-                                    }},
-                                    relations: {
-                                        Usuario: true,
-                                        Historia_Clinica: true
-                                    }, 
-                                    where: {
-                                        Id_Dueno: id
-                                    }})
+        return this.mascotaDao.infoMascota(id);
     }
 
 
     async verCitas(datoCita: citasPsicoDto){
         const {Id_Psicologo,fecha} = datoCita
-        return this.turnoRepository.find({select:{
-                                            Estado:{
-                                                Nombre_Estado:true
-                                            }},
-                                            relations:{
-                                                Estado:true
-                                            },
-                                            where:{
-                                                Id_Psicologo_Turno:Id_Psicologo, 
-                                                Fecha_Inicio_Turno: fecha, 
-                                                Id_Estado_Turno: 2
-                                            }})
+        return this.turnoDao.verCitas(Id_Psicologo, fecha);
     }
 
 
     async terminarCita(createHistoria: CreateHistoriaDto){
         //Ver estado de la cita
         const {Id_Mascota_HistoriaClinica} = createHistoria
-        const findEstadoCita = await this.turnoRepository.findOne({where:{Id_Mascota_Turno: Id_Mascota_HistoriaClinica, Id_Estado_Turno: 2}})
+        const findEstadoCita = await this.turnoDao.verEstadoCita(Id_Mascota_HistoriaClinica);
         if (!findEstadoCita){
             throw new HttpException('Forbidden - estado de mascota incorrecto', 403);
         }
         
         //actualizar estado de turno a terminado
-        await this.turnoRepository.update({Id_Mascota_Turno: Id_Mascota_HistoriaClinica},{Id_Estado_Turno: 3});
+        await this.turnoDao.actualizarEstadoTurno(Id_Mascota_HistoriaClinica);
         
         //cargar resultados a historia clinica
         const fechaHoy = new Date();
         createHistoria.Fecha_HistoriaClinica = fechaHoy;
 
-        const newHistoria = this.historiaRepository.create(createHistoria)
-        return this.historiaRepository.save(newHistoria);
+        return this.historiaDao.CrearHistoriaClinica(createHistoria);
     }
     
 
