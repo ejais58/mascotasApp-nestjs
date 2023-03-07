@@ -2,7 +2,7 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuarios } from '../users/entities/users.entity';
-import { LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { And, LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { Mascotas } from '../mascota/entities/mascota.entity';
 import { Turnos } from './entities/turnos.entity';
 import { Estados } from './entities/estados.entity';
@@ -40,11 +40,58 @@ export class PsicologiaService {
         const fechaHoraFin = new Date(Fecha_Inicio_Turno);
         fechaHoraFin.setHours(18,0,0,0)
 
+        let siguienteTurno = fechaHoraInicio;
+        const arrayTurnosDisponiblesPerro = [];
+        const arrayTurnosDisponiblesGato = [];
+        
+        //ver el tipo de mascota
+        const findMascota = await this.mascotaRepository.findOne({where: {Id_Mascota: Id_Mascota_Turno}})
+        if (findMascota.Tipo_Mascota === 'perro'){
+            while (siguienteTurno <= fechaHoraFin) {
+                const tiempoFinPerro = new Date(siguienteTurno.getTime() + 30 * 60000)
+                //mostrar turnos de ese dia para perros
+                const turnoDisponible = await this.turnoRepository.find({where: [{
+                                                                            Fecha_Inicio_Turno: LessThanOrEqual(siguienteTurno),
+                                                                            Fecha_Fin_Turno: MoreThanOrEqual(siguienteTurno)
+                                                                        },
+                                                                        {
+                                                                            Fecha_Inicio_Turno: LessThanOrEqual(tiempoFinPerro),
+                                                                            Fecha_Fin_Turno: MoreThanOrEqual(tiempoFinPerro)
+                                                                        }]})
+
+                if (turnoDisponible.length === 0){
+                    arrayTurnosDisponiblesPerro.push(new Date(siguienteTurno))
+                }
+                siguienteTurno = tiempoFinPerro;
+            }
+            return {turnos_perros: arrayTurnosDisponiblesPerro}
+        }
+        else if (findMascota.Tipo_Mascota === 'gato') {
+            while (siguienteTurno <= fechaHoraFin) {
+                const tiempoFinGato = new Date(siguienteTurno.getTime() + 45 * 60000)
+                //mostrar turnos de ese dia para perros
+                const turnoDisponible = await this.turnoRepository.find({where: [{
+                                                                            Fecha_Inicio_Turno: LessThanOrEqual(siguienteTurno),
+                                                                            Fecha_Fin_Turno: MoreThanOrEqual(siguienteTurno)
+                                                                        },
+                                                                        {
+                                                                            Fecha_Inicio_Turno: LessThanOrEqual(tiempoFinGato),
+                                                                            Fecha_Fin_Turno: MoreThanOrEqual(tiempoFinGato)
+                                                                        }]})
+
+                if (turnoDisponible.length === 0){
+                    arrayTurnosDisponiblesGato.push(new Date(siguienteTurno))
+                }
+                siguienteTurno = tiempoFinGato;
+            }
+            return {turnos_gatos: arrayTurnosDisponiblesGato}
+        }
+        
         
         
     }
 
-    async registrarTurno(newRegistro: RegistrarTurnoDto){
+    async registrarTurno(newRegistro: RegistrarTurnoDto, payloadId: number){
         const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = newRegistro
         
 
@@ -54,7 +101,12 @@ export class PsicologiaService {
             throw new HttpException('PSICOLOGO NOT FOUND', 404);
         }
 
-
+        //buscamos si es su dueño
+        const findDuenio = await this.mascotaRepository.findOne({where:{Id_Mascota: Id_Mascota_Turno,Id_Dueno: payloadId}});
+        if(!findDuenio){
+            throw new HttpException('No es su dueño', 404);
+        }
+        
         //buscar si no hay turnos pendientes para esa mascota
         const findMascotaTurno = await this.turnoRepository.findOne({where: {Id_Mascota_Turno: Id_Mascota_Turno}});
         //si no encuentra turno, me guarda un turno
@@ -72,6 +124,7 @@ export class PsicologiaService {
                     //guardar turno
                     const newTurno = this.turnoRepository.create(newRegistro);
                     return this.turnoRepository.save(newTurno);
+ 
 
                 } else if (findMascota.Tipo_Mascota === 'gato'){
 

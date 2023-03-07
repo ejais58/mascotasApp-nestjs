@@ -38,7 +38,7 @@ export class PsicologiaController {
         if (payload.roll === 'psicologo' ){
             throw new HttpException('Forbidden', 403);
         }
-        return this.psicologiaService.registrarTurno(newTurno);
+        return this.psicologiaService.registrarTurno(newTurno, payload.id);
     }
 
     @UseGuards(JwtAuthGuard)
