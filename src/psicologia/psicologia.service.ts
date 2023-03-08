@@ -14,7 +14,7 @@ export class PsicologiaService {
     constructor(@Inject(UsuarioDao) private readonly usuarioDao: UsuarioDao,
                 @Inject(MascotaDao) private readonly mascotaDao: MascotaDao,
                 @Inject(TurnosDao) private readonly turnoDao : TurnosDao,
-                @Inject(Historiaclinica) private readonly historiaDao: HistoriaclinicaDao){}
+                @Inject(HistoriaclinicaDao) private readonly historiaDao: HistoriaclinicaDao){}
 
     
     
