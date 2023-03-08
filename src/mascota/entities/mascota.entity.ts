@@ -1,6 +1,7 @@
 import { Column, Entity, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, JoinColumn, OneToMany } from 'typeorm';
 import { Usuarios } from '../../users/entities/users.entity';
 import { Historiaclinica } from '../../psicologia/entities/historiaClinica.entity';
+import { Turnos } from '../../psicologia/entities/turnos.entity';
 
 @Entity()
 export class Mascotas {
@@ -25,4 +26,8 @@ export class Mascotas {
 
     @OneToMany(() => Historiaclinica, (historia) => historia.mascotas)
     Historia_Clinica: Historiaclinica[]
+
+    @OneToMany(() => Turnos, (turno) => turno.Mascotas)
+    Turnos: Turnos[]
+
 }

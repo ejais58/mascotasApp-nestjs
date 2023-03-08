@@ -22,6 +22,16 @@ export class MascotaDao{
         return findMascota;
     }
 
+    async turnosMascota(id: number){
+        return this.mascotaRepository.find({relations:{
+                                                Turnos: true
+                                            },
+                                            where: {
+                                                Id_Dueno: id,
+                                                Turnos:{Id_Estado_Turno: 2}
+                                            }})
+    }
+
     async infoMascota(id: number){
         return this.mascotaRepository.find({select:{
             Usuario:{

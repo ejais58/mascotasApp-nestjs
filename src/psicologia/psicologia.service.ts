@@ -25,6 +25,12 @@ export class PsicologiaService {
     async verTurnosDisponibles(registro: RegistrarTurnoDto){
         const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
 
+        //buscamos si es psicologo
+        const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
+        if (findPsicologo.Roll_Usuario !== 'psicologo'){
+            throw new HttpException('PSICOLOGO NOT FOUND', 404);
+        }
+
         const fechaHoraInicio = new Date(Fecha_Inicio_Turno);
         fechaHoraInicio.setHours(9,0,0,0)
         const fechaHoraFin = new Date(Fecha_Inicio_Turno);
@@ -33,12 +39,6 @@ export class PsicologiaService {
         let siguienteTurno = fechaHoraInicio;
         const arrayTurnosDisponiblesPerro = [];
         const arrayTurnosDisponiblesGato = [];
-
-        //buscamos si es psicologo
-        const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
-        if (findPsicologo.Roll_Usuario !== 'psicologo'){
-            throw new HttpException('PSICOLOGO NOT FOUND', 404);
-        }
         
         //ver el tipo de mascota
         const findMascota = await this.mascotaDao.findMascotaByTipo(Id_Mascota_Turno)
@@ -134,19 +134,7 @@ export class PsicologiaService {
     }
 
     async verMisTurnos(id: number){
-        //busco mascota por el id del usuario
-        const findMascota = await this.mascotaDao.findMascotaDuenio(id);
-        if (!findMascota){
-            throw new HttpException('PET NOT FOUND', 404);
-        }
-
-        //muestro los turnos que hay para esa mascota
-        const findTurno = await this.turnoDao.findTurnoPendiente(findMascota.Id_Mascota)
-        if (!findTurno){
-            throw new HttpException('TURNO NOT FOUND', 404);
-        }
-
-        return findTurno;
+        return this.mascotaDao.turnosMascota(id);
     }
 
     async cancelarCita(id: number){
@@ -182,7 +170,7 @@ export class PsicologiaService {
         const fechaHoy = new Date();
         createHistoria.Fecha_HistoriaClinica = fechaHoy;
 
-        return this.historiaDao.CrearHistoriaClinica(createHistoria);
+        return this.historiaDao.crearHistoria(createHistoria);
     }
     
 
