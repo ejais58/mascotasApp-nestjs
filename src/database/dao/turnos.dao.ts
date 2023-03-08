@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Turnos } from '../../psicologia/entities/turnos.entity';
-import { Repository, LessThanOrEqual, MoreThanOrEqual, MoreThan } from 'typeorm';
+import { Repository, LessThanOrEqual, MoreThanOrEqual, MoreThan, LessThan } from 'typeorm';
 import { RegistrarTurnoDto } from '../../psicologia/dto/registrar-turno.dto';
 
 @Injectable()
@@ -14,8 +14,8 @@ export class TurnosDao{
             Fecha_Fin_Turno: MoreThanOrEqual(fechaInicio)
         },
         {
-            Fecha_Inicio_Turno: LessThanOrEqual(fechaFin),
-            Fecha_Fin_Turno: MoreThanOrEqual(fechaFin)
+            Fecha_Inicio_Turno: LessThan(fechaFin),
+            Fecha_Fin_Turno: MoreThan(fechaFin)
         }]})
 
         return turnoDisponible;

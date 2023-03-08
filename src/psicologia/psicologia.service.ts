@@ -1,6 +1,5 @@
 import { Injectable, HttpException, Inject } from '@nestjs/common';
 import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
-import { Historiaclinica } from './entities/historiaClinica.entity';
 import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
 import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
 import { UsuarioDao } from '../database/dao/usuarios.dao';
@@ -24,13 +23,13 @@ export class PsicologiaService {
 
     async verTurnosDisponibles(registro: RegistrarTurnoDto){
         const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
-
+        
         //buscamos si es psicologo
         const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
         if (findPsicologo.Roll_Usuario !== 'psicologo'){
             throw new HttpException('PSICOLOGO NOT FOUND', 404);
         }
-
+        
         const fechaHoraInicio = new Date(Fecha_Inicio_Turno);
         fechaHoraInicio.setHours(9,0,0,0)
         const fechaHoraFin = new Date(Fecha_Inicio_Turno);
@@ -49,7 +48,7 @@ export class PsicologiaService {
                 const turnoDisponible = await this.turnoDao.turnosDisponibles(siguienteTurno, tiempoFinPerro);
 
                 if (turnoDisponible.length === 0){
-                    arrayTurnosDisponiblesPerro.push(new Date(siguienteTurno))
+                    arrayTurnosDisponiblesPerro.push(new Date(siguienteTurno).toLocaleString())
                 }
                 siguienteTurno = tiempoFinPerro;
             }
@@ -62,7 +61,7 @@ export class PsicologiaService {
                 const turnoDisponible = await this.turnoDao.turnosDisponibles(siguienteTurno, tiempoFinGato);
 
                 if (turnoDisponible.length === 0){
-                    arrayTurnosDisponiblesGato.push(new Date(siguienteTurno))
+                    arrayTurnosDisponiblesGato.push(new Date(siguienteTurno).toLocaleString())
                 }
                 siguienteTurno = tiempoFinGato;
             }
@@ -169,7 +168,6 @@ export class PsicologiaService {
         //cargar resultados a historia clinica
         const fechaHoy = new Date();
         createHistoria.Fecha_HistoriaClinica = fechaHoy;
-
         return this.historiaDao.crearHistoria(createHistoria);
     }
     
