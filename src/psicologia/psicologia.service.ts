@@ -1,11 +1,13 @@
 import { Injectable, HttpException, Inject } from '@nestjs/common';
-import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
+import { RegistrarTurnoDto, BuscarTurnoDto} from './dto/registrar-turno.dto';
 import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
 import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
 import { UsuarioDao } from '../database/dao/usuarios.dao';
 import { MascotaDao } from '../database/dao/mascotas.dao';
 import { TurnosDao } from '../database/dao/turnos.dao';
 import { HistoriaclinicaDao } from '../database/dao/historiaclinica.dao';
+import {parse} from 'date-fns' 
+
 
 @Injectable()
 export class PsicologiaService {
@@ -21,21 +23,32 @@ export class PsicologiaService {
         return this.usuarioDao.allPsicologo();
     }
 
-    async verTurnosDisponibles(registro: RegistrarTurnoDto){
-        const {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
+    async verTurnosDisponibles(registro: BuscarTurnoDto){
+        let {Id_Psicologo_Turno, Id_Mascota_Turno, Fecha_Inicio_Turno} = registro
         
         //buscamos si es psicologo
         const findPsicologo = await this.usuarioDao.findPsicologoById(Id_Psicologo_Turno);
         if (findPsicologo.Roll_Usuario !== 'psicologo'){
             throw new HttpException('PSICOLOGO NOT FOUND', 404);
         }
+       
+        const fechaSplit = Fecha_Inicio_Turno.split('/')
+        var date = new Date(`${fechaSplit[2]}/${fechaSplit[1]}/${fechaSplit[0]}`);
         
-        const fechaHoraInicio = new Date(Fecha_Inicio_Turno);
-        fechaHoraInicio.setHours(9,0,0,0)
-        const fechaHoraFin = new Date(Fecha_Inicio_Turno);
+        console.log(date);
+        
+        
+
+        const fechaHoraInicio = new Date(date);
+        fechaHoraInicio.setHours(9,0,0,0);
+        console.log('hora inicio: ',fechaHoraInicio)
+        
+        const fechaHoraFin = new Date(date);
         fechaHoraFin.setHours(18,0,0,0)
+        
 
         let siguienteTurno = fechaHoraInicio;
+        console.log("siguiente: ", siguienteTurno);
         const arrayTurnosDisponiblesPerro = [];
         const arrayTurnosDisponiblesGato = [];
         
@@ -44,6 +57,7 @@ export class PsicologiaService {
         if (findMascota.Tipo_Mascota === 'perro'){
             while (siguienteTurno <= fechaHoraFin) {
                 const tiempoFinPerro = new Date(siguienteTurno.getTime() + 30 * 60000)
+                
                 //mostrar turnos de ese dia para perros
                 const turnoDisponible = await this.turnoDao.turnosDisponibles(siguienteTurno, tiempoFinPerro);
 

@@ -1,11 +1,12 @@
 import { Body, Controller, Post, UseGuards, Get, Req, HttpException, Param, ParseIntPipe,Patch } from '@nestjs/common';
 import { PsicologiaService } from './psicologia.service';
-import { RegistrarTurnoDto } from './dto/registrar-turno.dto';
+import { RegistrarTurnoDto, BuscarTurnoDto } from './dto/registrar-turno.dto';
 import { JwtAuthGuard } from '../users/jwt/jwt-auth.guard';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from '../users/jwt/interfaces/jwtPayload';
 import { citasPsicoDto } from '../psicologia/dto/citas-psico.dto';
 import { CreateHistoriaDto } from '../psicologia/dto/create-historia.dto';
+
 
 @Controller('psicologia')
 export class PsicologiaController {
@@ -25,7 +26,7 @@ export class PsicologiaController {
     }
 
     @Get('turnos')
-    verTurnosDisponibles(@Body() registro: RegistrarTurnoDto ){
+    verTurnosDisponibles(@Body() registro: BuscarTurnoDto ){
         return this.psicologiaService.verTurnosDisponibles(registro);
     }
 
